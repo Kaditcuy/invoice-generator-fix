@@ -52,14 +52,10 @@ with app.app_context():
 @app.after_request
 def after_request(response):
     response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
-    response.headers.add('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS')
     response.headers.add('Access-Control-Allow-Origin', '*')
-    app.logger.info(f"Request: {request.method} {request.path} - Status: {response.status_code}")
-    return response
-
-@app.after_request
-def add_permissions_policy_header(response):
     response.headers['Permissions-Policy'] = 'payment=*'
+    app.logger.info(f"Request: {request.method} {request.path} - Status: {response.status_code}")
     return response
 
 
@@ -635,9 +631,12 @@ def delete_business(business_id):
     return Businesses.delete_business(business_id)
 
 
-@app.route('/', methods=['GET'])
+@app.route('/', methods=['GET', 'OPTIONS'])
 def home():
     """Simple JSON status for debugging"""
+    
+    if request.method == 'OPTIONS':
+        return '', 200
 
     # Check database status
     try:
