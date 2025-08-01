@@ -241,7 +241,8 @@ def get_invoices():
         {
             'id': str(inv.id),
             'user_id': str(inv.user_id),
-            'client_id': str(inv.client_id),
+            'business_id': str(inv.business_id) if inv.business_id else None,
+            'client_id': str(inv.client_id) if inv.client_id else None,
             'data': inv.data,
             'issued_date': inv.issued_date,
             'due_date': inv.due_date,
@@ -257,6 +258,7 @@ def get_invoices():
 def save_invoice():
     data = request.get_json()
     user_id = data.get('user_id')
+    business_id = data.get('business_id')
     client_id = data.get('client_id')
     invoice_data = data.get('data')  # All invoice details as JSON
     issued_date = data.get('issued_date')
@@ -271,6 +273,8 @@ def save_invoice():
     try:
         import uuid
         uuid.UUID(user_id)
+        if business_id:
+            uuid.UUID(business_id)
         if client_id:
             uuid.UUID(client_id)
     except ValueError:
@@ -278,6 +282,7 @@ def save_invoice():
 
     invoice = Invoice(
         user_id=user_id,
+        business_id=business_id,
         client_id=client_id,
         data=invoice_data,
         issued_date=issued_date,
@@ -395,6 +400,7 @@ def get_invoice(invoice_id):
             'invoice': {
                 'id': str(invoice.id),
                 'user_id': str(invoice.user_id),
+                'business_id': str(invoice.business_id) if invoice.business_id else None,
                 'client_id': str(invoice.client_id) if invoice.client_id else None,
                 'data': invoice.data,
                 'status': invoice.status,
