@@ -218,36 +218,50 @@ def generate_invoice():
 
 @app.route('/api/invoices', methods=['GET'])
 def get_invoices():
-    user_id = request.args.get('user_id')
-    if not user_id:
-        return jsonify({'success': False, 'error': 'user_id required'}), 400
-
-    # Add validation for proper UUID format
     try:
-        import uuid
-        # This will raise ValueError if not a valid UUID
-        uuid.UUID(user_id)
-    except ValueError:
-        return jsonify({'success': False, 'error': 'Invalid UUID format for user_id'}), 400
+        user_id = request.args.get('user_id')
+        if not user_id:
+            return jsonify({'success': False, 'error': 'user_id required'}), 400
 
-    from models import Invoice
-    invoices = Invoice.query.filter_by(user_id=user_id).all()
+        # Add validation for proper UUID format
+        try:
+            import uuid
+            # This will raise ValueError if not a valid UUID
+            uuid.UUID(user_id)
+        except ValueError:
+            return jsonify({'success': False, 'error': 'Invalid UUID format for user_id'}), 400
+
+        from models import Invoice
+        invoices = Invoice.query.filter_by(user_id=user_id).all()
     # You may want to serialize your invoices appropriately:
-    result = [
-        {
-            'id': str(inv.id),
-            'user_id': str(inv.user_id),
-            'business_id': str(inv.business_id) if inv.business_id else None,
-            'client_id': str(inv.client_id) if inv.client_id else None,
-            'data': inv.data,
-            'issued_date': inv.issued_date,
-            'due_date': inv.due_date,
-            'status': inv.status,
-            'currency': inv.data.get('currency', 'USD') if isinstance(inv.data, dict) else 'USD',
-        }
-        for inv in invoices
-    ]
-    return jsonify({'success': True, 'invoices': result})
+    result = []
+    for inv in invoices:
+        try:
+            # Try to access business_id, but handle case where column doesn't exist
+            business_id = str(inv.business_id) if hasattr(inv, 'business_id') and inv.business_id else None
+        except Exception as e:
+            app.logger.warning(f"Error accessing business_id for invoice {inv.id}: {e}")
+            business_id = None
+            
+        try:
+            result.append({
+                'id': str(inv.id),
+                'user_id': str(inv.user_id),
+                'business_id': business_id,
+                'client_id': str(inv.client_id) if inv.client_id else None,
+                'data': inv.data,
+                'issued_date': inv.issued_date,
+                'due_date': inv.due_date,
+                'status': inv.status,
+                'currency': inv.data.get('currency', 'USD') if isinstance(inv.data, dict) else 'USD',
+            })
+        except Exception as e:
+            app.logger.error(f"Error serializing invoice {inv.id}: {e}")
+            continue
+        return jsonify({'success': True, 'invoices': result})
+    except Exception as e:
+        app.logger.error(f"Error in get_invoices: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'error': 'Failed to fetch invoices', 'message': str(e)}), 500
 
 
 @app.route('/api/invoices', methods=['POST'])
