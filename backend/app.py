@@ -46,6 +46,40 @@ with app.app_context():
         print("Database tables created successfully")
     except Exception as e:
         print(f"Error creating database tables: {e}")
+    
+    # Run database migrations
+    try:
+        import os
+        migration_path = os.path.join(os.path.dirname(__file__), 'migration.sql')
+        print(f"Looking for migration file at: {migration_path}")
+        
+        if os.path.exists(migration_path):
+            with open(migration_path, 'r') as f:
+                migration_sql = f.read()
+            print(f"Migration file found, size: {len(migration_sql)} characters")
+            
+            # Split the SQL into individual statements
+            statements = migration_sql.split(';')
+            print(f"Found {len(statements)} SQL statements")
+            
+            for i, statement in enumerate(statements):
+                statement = statement.strip()
+                if statement and not statement.startswith('--'):
+                    try:
+                        db.session.execute(text(statement))
+                        print(f"Executed migration {i+1}: {statement[:50]}...")
+                    except Exception as e:
+                        print(f"Migration statement {i+1} failed: {e}")
+                        print(f"Full statement: {statement}")
+            
+            db.session.commit()
+            print("Database migrations completed successfully")
+        else:
+            print(f"Migration file not found at {migration_path}")
+    except Exception as e:
+        print(f"Error running migrations: {e}")
+        import traceback
+        traceback.print_exc()
 
 
 @app.after_request
