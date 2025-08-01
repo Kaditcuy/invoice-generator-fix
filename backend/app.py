@@ -10,7 +10,6 @@ from datetime import datetime
 from io import BytesIO
 from werkzeug.security import generate_password_hash, check_password_hash
 from db import db
-from datetime import datetime
 from sqlalchemy import text
 from clients import Clients
 from invoices import InvoiceOperations
