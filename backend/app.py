@@ -21,11 +21,9 @@ logging.basicConfig(level=logging.DEBUG)
 app = Flask(__name__)
 load_dotenv()
 DB_PASSWORD = os.getenv('DB_PASSWORD', '')
-DATABASE_URL = os.environ.get("DATABASE_URL_1")
+DATABASE_URL = os.environ.get("DATABASE_URL")
 
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv(
-    'DATABASE_URL'
-)
+app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
@@ -543,6 +541,23 @@ def db_info():
         })
     except Exception as e:
         app.logger.error(f"Database connection failed: {str(e)}", exc_info=True)
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
+@app.route('/run-migrations', methods=['POST'])
+def run_migrations():
+    """Run database migrations"""
+    try:
+        from flask_migrate import upgrade
+        upgrade()
+        return jsonify({
+            'status': 'success',
+            'message': 'Migrations completed successfully'
+        })
+    except Exception as e:
+        app.logger.error(f"Migration failed: {str(e)}", exc_info=True)
         return jsonify({
             'status': 'error',
             'message': str(e)
