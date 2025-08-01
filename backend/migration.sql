@@ -23,13 +23,14 @@ CREATE TABLE IF NOT EXISTS businesses (
 CREATE INDEX IF NOT EXISTS idx_invoices_business_id ON invoices(business_id);
 CREATE INDEX IF NOT EXISTS idx_businesses_user_id ON businesses(user_id);
 
--- Add invoice_number column to invoices table
-ALTER TABLE invoices ADD COLUMN IF NOT EXISTS invoice_number VARCHAR(100) UNIQUE NOT NULL DEFAULT 'INV-' || EXTRACT(EPOCH FROM NOW())::TEXT;
+-- Add invoice_number column to invoices table (nullable first)
+ALTER TABLE invoices ADD COLUMN IF NOT EXISTS invoice_number VARCHAR(100);
 
--- Update existing invoices with a default invoice number if they don't have one
+-- Update existing invoices with a default invoice number
 UPDATE invoices 
 SET invoice_number = 'INV-' || EXTRACT(EPOCH FROM created_at)::TEXT || '-' || id::TEXT
 WHERE invoice_number IS NULL OR invoice_number = '';
 
--- Make sure the column is not null after setting default values
-ALTER TABLE invoices ALTER COLUMN invoice_number SET NOT NULL; 
+-- Now make it NOT NULL and add UNIQUE constraint
+ALTER TABLE invoices ALTER COLUMN invoice_number SET NOT NULL;
+ALTER TABLE invoices ADD CONSTRAINT IF NOT EXISTS invoices_invoice_number_unique UNIQUE (invoice_number); 
