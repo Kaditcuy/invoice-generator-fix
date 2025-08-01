@@ -33,4 +33,14 @@ WHERE invoice_number IS NULL OR invoice_number = '';
 
 -- Now make it NOT NULL and add UNIQUE constraint
 ALTER TABLE invoices ALTER COLUMN invoice_number SET NOT NULL;
-ALTER TABLE invoices ADD CONSTRAINT IF NOT EXISTS invoices_invoice_number_unique UNIQUE (invoice_number); 
+
+-- Add UNIQUE constraint (PostgreSQL doesn't support IF NOT EXISTS for constraints)
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint 
+        WHERE conname = 'invoices_invoice_number_unique'
+    ) THEN
+        ALTER TABLE invoices ADD CONSTRAINT invoices_invoice_number_unique UNIQUE (invoice_number);
+    END IF;
+END $$;
