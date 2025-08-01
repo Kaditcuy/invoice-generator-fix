@@ -7,7 +7,8 @@ import {
   Users,
   Settings,
   User,
-  SquarePlus
+  SquarePlus,
+  Building2
 } from 'lucide-react';
 import { useCurrency } from '../context/CurrencyContext';
 import Tooltip from './Tooltip';
@@ -25,13 +26,18 @@ const menuItems: MenuItem[] = [
     path: '/invoices',
     label: 'Invoices',
     icon: <FileText size={22} />,
-
   },
-  { path: '/clients', label: 'Clients', icon: <Users size={22} /> },
-  { path: '/settings', label: 'Settings', icon: <Settings size={22} />,
-
+  { 
+    path: '/clients', 
+    label: 'Clients', 
+    icon: <Users size={22} />,
+    submenu: [
+      { label: 'All Clients', path: '/clients' },
+      { label: 'Businesses', path: '/businesses' }
+    ]
   },
-
+  { path: '/businesses', label: 'Businesses', icon: <Building2 size={22} /> },
+  { path: '/settings', label: 'Settings', icon: <Settings size={22} /> },
   { path: '/create-invoice', label: 'Create', icon: <SquarePlus size={22} /> },
 ];
 
@@ -45,6 +51,8 @@ const mobileMenuItems: MenuItem[] = [
     label: 'Invoices',
     icon: <FileText size={30} />,
   },
+  { path: '/clients', label: 'Clients', icon: <Users size={30} /> },
+  { path: '/businesses', label: 'Businesses', icon: <Building2 size={30} /> },
   { path: '/create-invoice', label: 'Create', icon: <SquarePlus size={30} /> },
   { path: '/settings', label: 'SettingsPage', icon: <Settings size={30} /> },
 ];
@@ -142,7 +150,7 @@ const SideMenu: React.FC = () => {
         <div className="w-48 bg-[#f6e9df] pt-10 border-neutral-300 shadow-sm">
           {menuItems
               .find(item => item.label === expandedItem)
-              ?.submenu?.map(({ label, path, icon }) => (
+              ?.submenu?.map(({ label, path }) => (
                 <div className=" border-neutral-300" key={path}>
                 <Link
                   key={path}

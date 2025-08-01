@@ -14,6 +14,7 @@ import Dashboard from './pages/Dashboard';
 import SettingsPage from './pages/SettingsPage';
 import InvoicesPage from './pages/InvoicesPage';
 import ClientsPage from './pages/ClientsPage';
+import BusinessesPage from './pages/BusinessesPage';
 
 
 function Clients() {
@@ -71,6 +72,7 @@ const AppRoutes: React.FC = () => {
             <Route path="/" element={<Dashboard />} />
             <Route path="/create-invoice" element={<InvoiceGenerator />} />
             <Route path="/clients" element={<ProtectedRoute><ClientsPage /></ProtectedRoute>} />
+            <Route path="/businesses" element={<ProtectedRoute><BusinessesPage /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
 
             <Route path="/invoices" element={<ProtectedRoute><InvoicesPage /></ProtectedRoute>} />
