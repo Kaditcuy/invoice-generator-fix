@@ -555,14 +555,21 @@ def db_info():
 def run_migrations():
     """Run database migrations"""
     try:
-        from flask_migrate import upgrade
-        upgrade()
+        # Read the migration SQL file
+        with open('migration.sql', 'r') as f:
+            migration_sql = f.read()
+        
+        # Execute the migration SQL
+        db.session.execute(text(migration_sql))
+        db.session.commit()
+        
         return jsonify({
             'status': 'success',
-            'message': 'Migrations completed successfully'
+            'message': 'Database migration completed successfully'
         })
     except Exception as e:
         app.logger.error(f"Migration failed: {str(e)}", exc_info=True)
+        db.session.rollback()
         return jsonify({
             'status': 'error',
             'message': str(e)
