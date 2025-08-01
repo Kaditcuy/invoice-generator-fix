@@ -104,20 +104,18 @@ const BusinessAutocomplete: React.FC<BusinessAutocompleteProps> = ({
     };
 
     document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   // Handle keyboard navigation
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && isOpen && businesses.length > 0) {
-      handleBusinessSelect(businesses[0]);
+    if (e.key === 'Escape') {
+      setIsOpen(false);
     }
   };
 
   return (
-    <div className={`relative ${className}`} ref={dropdownRef}>
+    <div className={`relative ${className}`}>
       {/* Input Field */}
       <div className="relative">
         <textarea
@@ -126,88 +124,115 @@ const BusinessAutocomplete: React.FC<BusinessAutocompleteProps> = ({
           onChange={handleInputChange}
           onFocus={handleFocus}
           onKeyDown={handleKeyDown}
+          rows={3}
+          className="flex lg:w-64 w-full min-h-[100px] p-3 rounded-md bg-neutral-700 border border-neutral-600 focus:outline-none focus:ring-2 focus:ring-emerald-500"
           placeholder={placeholder}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-          rows={1}
         />
-        <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+        <div className="absolute right-2 top-2 flex items-center space-x-1">
+          {loading && (
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-emerald-500"></div>
+          )}
+          <ChevronDown size={16} className="text-neutral-400" />
+        </div>
       </div>
 
       {/* Dropdown */}
       {isOpen && (
-        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-          {loading ? (
-            <div className="px-4 py-3 text-sm text-gray-500">
-              Loading businesses...
-            </div>
-          ) : businesses.length === 0 ? (
-            <div className="px-4 py-3 text-sm text-gray-500">
-              No businesses found. Create your first business to get started.
+        <div
+          ref={dropdownRef}
+          className="absolute z-50 w-full mt-1 bg-neutral-800 border border-neutral-600 rounded-md shadow-lg max-h-60 overflow-y-auto"
+        >
+          {businesses.length > 0 ? (
+            <div className="py-1">
+              {businesses.map((business) => (
+                <div
+                  key={business.id}
+                  onClick={() => handleBusinessSelect(business)}
+                  className="px-4 py-2 hover:bg-neutral-700 cursor-pointer flex items-center space-x-3"
+                >
+                  <div className="flex-shrink-0">
+                    <Building size={16} className="text-emerald-500" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium text-white truncate">
+                      {business.name}
+                    </div>
+                    {business.email && (
+                      <div className="flex items-center text-xs text-neutral-400">
+                        <Mail size={12} className="mr-1" />
+                        {business.email}
+                      </div>
+                    )}
+                    {business.phone && (
+                      <div className="flex items-center text-xs text-neutral-400">
+                        <Phone size={12} className="mr-1" />
+                        {business.phone}
+                      </div>
+                    )}
+                    {business.website && (
+                      <div className="flex items-center text-xs text-neutral-400">
+                        <Globe size={12} className="mr-1" />
+                        {business.website}
+                      </div>
+                    )}
+                  </div>
+                  <div className="text-xs text-neutral-500">
+                    {business.invoice_count || 0} invoices
+                  </div>
+                </div>
+              ))}
             </div>
           ) : (
-            <>
-              {/* Business List */}
-              <div className="py-1">
-                {businesses.map((business) => (
-                  <button
-                    key={business.id}
-                    onClick={() => handleBusinessSelect(business)}
-                    className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-b-0"
-                  >
-                    <div className="flex items-center space-x-3">
-                      <div className="flex-shrink-0">
-                        <div className="h-8 w-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center text-white text-sm font-semibold">
-                          <Building className="h-4 w-4" />
-                        </div>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-sm font-medium text-gray-900 truncate">
-                          {business.name}
-                        </div>
-                        <div className="flex items-center space-x-4 text-xs text-gray-500">
-                          {business.email && (
-                            <div className="flex items-center">
-                              <Mail className="h-3 w-3 mr-1" />
-                              <span className="truncate">{business.email}</span>
-                            </div>
-                          )}
-                          {business.phone && (
-                            <div className="flex items-center">
-                              <Phone className="h-3 w-3 mr-1" />
-                              <span>{business.phone}</span>
-                            </div>
-                          )}
-                          {business.website && (
-                            <div className="flex items-center">
-                              <Globe className="h-3 w-3 mr-1" />
-                              <span className="truncate">{business.website}</span>
-                            </div>
-                          )}
-                        </div>
-                        <div className="text-xs text-gray-400 mt-1">
-                          {business.invoice_count || 0} invoices
-                        </div>
-                      </div>
-                    </div>
-                  </button>
-                ))}
-              </div>
-
-              {/* Business Limit Info */}
-              <div className="px-4 py-2 border-t border-neutral-600 bg-neutral-750">
-                <div className="text-xs text-neutral-400 mb-2">
-                  {currentBusinessCount}/{businessLimit} businesses used
-                </div>
-                <button
-                  onClick={handleCreateBusiness}
-                  className="w-full flex items-center justify-center px-3 py-2 bg-emerald-600 text-white text-sm rounded-md hover:bg-emerald-700 transition-colors"
-                >
-                  <Plus size={14} className="mr-2" />
-                  Create New Business
-                </button>
-              </div>
-            </>
+            <div className="px-4 py-3 text-sm text-neutral-400">
+              {loading ? 'Loading businesses...' : 'No businesses found. Create your first business to get started.'}
+            </div>
           )}
+          
+          {/* Business Limit Info */}
+          <div className="px-4 py-2 border-t border-neutral-600 bg-neutral-750">
+            <div className="text-xs text-neutral-400 mb-2">
+              {currentBusinessCount}/{businessLimit} businesses used
+            </div>
+            <button
+              onClick={handleCreateBusiness}
+              className="w-full flex items-center justify-center px-3 py-2 bg-emerald-600 text-white text-sm rounded-md hover:bg-emerald-700 transition-colors"
+            >
+              <Plus size={14} className="mr-2" />
+              Create New Business
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Limit Reached Dialog */}
+      {showLimitDialog && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-neutral-800 border border-neutral-600 rounded-lg p-6 max-w-md mx-4">
+            <h3 className="text-lg font-semibold text-white mb-2">
+              Business Limit Reached
+            </h3>
+            <p className="text-neutral-300 mb-4">
+              You have reached the maximum limit of 2 businesses. Please upgrade your plan to add more businesses.
+            </p>
+            <div className="flex space-x-3">
+              <button
+                onClick={() => setShowLimitDialog(false)}
+                className="flex-1 px-4 py-2 bg-neutral-700 text-white rounded-md hover:bg-neutral-600"
+              >
+                Close
+              </button>
+              <button
+                onClick={() => {
+                  setShowLimitDialog(false);
+                  // TODO: Implement upgrade flow
+                  window.open('/upgrade', '_blank');
+                }}
+                className="flex-1 px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700"
+              >
+                Upgrade Plan
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
