@@ -14,6 +14,7 @@ from datetime import datetime
 from sqlalchemy import text
 from clients import Clients
 from invoices import InvoiceOperations
+from businesses import Businesses
 
 
 logging.basicConfig(level=logging.DEBUG)
@@ -605,6 +606,27 @@ def get_client_invoices(client_id):
 def bulk_delete_clients():
     """Delete multiple clients at once"""
     return Clients.bulk_delete_clients()
+
+# Business routes
+@app.route('/api/businesses', methods=['POST'])
+def create_business():
+    return Businesses.create_business()
+
+@app.route('/api/businesses', methods=['GET'])
+def get_businesses():
+    return Businesses.get_businesses()
+
+@app.route('/api/businesses/<uuid:business_id>', methods=['GET'])
+def get_business(business_id):
+    return Businesses.get_business(business_id)
+
+@app.route('/api/businesses/<uuid:business_id>', methods=['PUT'])
+def update_business(business_id):
+    return Businesses.update_business(business_id)
+
+@app.route('/api/businesses/<uuid:business_id>', methods=['DELETE'])
+def delete_business(business_id):
+    return Businesses.delete_business(business_id)
 
 
 @app.route('/', methods=['GET'])

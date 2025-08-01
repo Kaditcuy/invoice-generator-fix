@@ -3,6 +3,7 @@ import { ChevronDown, ChevronDownIcon } from 'lucide-react';
 import LogoUpload from './LogoUpload';
 import PartyField from './PartyField';
 import ClientAutocomplete from './ClientAutocomplete';
+import BusinessAutocomplete from './BusinessAutocomplete';
 import InvoiceLine from './InvoiceLine';
 import PaymentSection from './PaymentSection';
 import TaxDiscountSection from './TaxDiscountSection';
@@ -308,7 +309,15 @@ const [date, setDate] = React.useState<Date | undefined>(
 
             <div className="flex flex-col lg:flex-row gap-4 mb-6 w-full lg:w-auto">
                 <div className="w-full lg:w-auto">
-                  <PartyField label="From" value={from} onChange={(e) => setFrom(e.target.value)} />
+                  <div className="mb-6 w-full">
+                    <span className="block text-sm font-medium mb-2">From</span>
+                    <BusinessAutocomplete
+                      value={from}
+                      onChange={setFrom}
+                      placeholder="Click to select a business..."
+                      className="w-full"
+                    />
+                  </div>
                 </div>
                 <div className="w-full lg:w-auto">
                   <div className="mb-6 w-full">
