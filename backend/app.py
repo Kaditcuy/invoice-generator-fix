@@ -69,8 +69,12 @@ with app.app_context():
                         db.session.execute(text(statement))
                         print(f"Executed migration {i+1}: {statement[:50]}...")
                     except Exception as e:
-                        print(f"Migration statement {i+1} failed: {e}")
-                        print(f"Full statement: {statement}")
+                        # Ignore constraint already exists errors
+                        if "already exists" in str(e) or "duplicate key" in str(e):
+                            print(f"Migration statement {i+1} skipped (already exists): {statement[:50]}...")
+                        else:
+                            print(f"Migration statement {i+1} failed: {e}")
+                            print(f"Full statement: {statement}")
             
             db.session.commit()
             print("Database migrations completed successfully")
