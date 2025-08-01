@@ -52,8 +52,6 @@ with app.app_context():
 def after_request(response):
     response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
     response.headers.add('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
-    response.headers.add('Access-Control-Allow-Origin', '*')
-    app.logger.info(f"Request: {request.method} {request.path} - Status: {response.status_code}")
     return response
 
 @app.after_request
@@ -631,17 +629,6 @@ def home():
         "timestamp": current_time
     })
 
-@app.route('/api/test', methods=['GET'])
-def test_api():
-    """Test endpoint to verify API is working"""
-    return jsonify({
-        "message": "API is working!",
-        "timestamp": datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    })
-
 
 if __name__ == '__main__':
     app.run(port=5000, debug=True)
-
-# Enable debug mode for production
-app.debug = True
