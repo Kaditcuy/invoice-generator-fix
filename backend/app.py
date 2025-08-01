@@ -631,6 +631,14 @@ def home():
         "timestamp": current_time
     })
 
+@app.route('/api/test', methods=['GET'])
+def test_api():
+    """Test endpoint to verify API is working"""
+    return jsonify({
+        "message": "API is working!",
+        "timestamp": datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    })
+
 
 if __name__ == '__main__':
     app.run(port=5000, debug=True)
