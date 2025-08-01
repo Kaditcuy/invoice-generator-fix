@@ -1,0 +1,10 @@
+[33me0039d8[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m Fix ClientsPage blank page issue - add null checks for user authentication
+[33m6bf1df6[m Fix ClientsPage API calls and add Create Client button to dropdown
+[33mdaf962e[m Update client dropdown to show all clients on click/focus instead of search
+[33ma2e0fa9[m Add client autocomplete functionality with 10-client limit
+[33m78dc635[m Clean state - ready for environment variable fix
+[33mb20d1a3[m Revert API config to match partner's working version
+[33m9159802[m Fix API config to use Netlify redirects instead of environment variable
+[33m1aa8e63[m hot fix
+[33mf158bd1[m Fix API base URL to handle undefined environment variable
+[33mc8119ce[m Add debug mode and CORS debugging to backend

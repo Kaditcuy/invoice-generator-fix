@@ -54,6 +54,9 @@ const ClientsPage = () => {
   }, [currentPage, searchTerm, userId]);
 
   const fetchClients = async () => {
+    console.log('fetchClients called with userId:', userId);
+    console.log('API_BASE_URL:', API_BASE_URL);
+    
     setLoading(true);
     try {
       const params = new URLSearchParams({
@@ -63,8 +66,12 @@ const ClientsPage = () => {
         ...(searchTerm && { search: searchTerm })
       });
 
-      const response = await fetch(`${API_BASE_URL}api/clients?${params}`);
+      const url = `${API_BASE_URL}api/clients?${params}`;
+      console.log('Fetching from URL:', url);
+      
+      const response = await fetch(url);
       const data = await response.json();
+      console.log('Response data:', data);
 
       if (data.success) {
         setClients(data.clients);
@@ -73,6 +80,7 @@ const ClientsPage = () => {
         showNotification('Error fetching clients', 'error');
       }
     } catch (error) {
+      console.error('Error in fetchClients:', error);
       showNotification('Failed to fetch clients', 'error');
     }
     setLoading(false);
