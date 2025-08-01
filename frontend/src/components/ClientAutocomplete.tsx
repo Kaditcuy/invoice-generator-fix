@@ -24,7 +24,7 @@ const ClientAutocomplete: React.FC<ClientAutocompleteProps> = ({
   value,
   onChange,
   onClientSelect,
-  placeholder = "Enter client name or email...",
+  placeholder = "Click to select a client...",
   className = ""
 }) => {
   const { user } = useAuth();
@@ -33,7 +33,6 @@ const ClientAutocomplete: React.FC<ClientAutocompleteProps> = ({
   const [isOpen, setIsOpen] = useState(false);
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
   const [clientLimit, setClientLimit] = useState(10);
   const [currentClientCount, setCurrentClientCount] = useState(0);
   const [showLimitDialog, setShowLimitDialog] = useState(false);
@@ -41,16 +40,14 @@ const ClientAutocomplete: React.FC<ClientAutocompleteProps> = ({
   const dropdownRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  // Fetch clients based on search term
-  const fetchClients = async (search: string = '') => {
+  // Fetch all clients for the user
+  const fetchClients = async () => {
     if (!userId) return;
     
     setLoading(true);
     try {
       const params = new URLSearchParams({
-        user_id: userId,
-        search: search,
-        limit: '5' // Limit results for autocomplete
+        user_id: userId
       });
       
       const response = await fetch(`${API_BASE_URL}api/clients?${params}`);
@@ -68,25 +65,21 @@ const ClientAutocomplete: React.FC<ClientAutocompleteProps> = ({
     }
   };
 
-  // Handle input change
+  // Handle input change (just update the value, don't search)
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const newValue = e.target.value;
-    onChange(newValue);
-    setSearchTerm(newValue);
-    
-    if (newValue.length >= 2) {
-      fetchClients(newValue);
-      setIsOpen(true);
-    } else {
-      setIsOpen(false);
-    }
+    onChange(e.target.value);
+  };
+
+  // Handle focus - show all clients
+  const handleFocus = () => {
+    fetchClients();
+    setIsOpen(true);
   };
 
   // Handle client selection
   const handleClientSelect = (client: Client) => {
     const clientText = `${client.name}${client.email ? ` (${client.email})` : ''}`;
     onChange(clientText);
-    setSearchTerm(clientText);
     setIsOpen(false);
     onClientSelect?.(client);
   };
@@ -118,12 +111,8 @@ const ClientAutocomplete: React.FC<ClientAutocompleteProps> = ({
           ref={inputRef}
           value={value}
           onChange={handleInputChange}
+          onFocus={handleFocus}
           onKeyDown={handleKeyDown}
-          onFocus={() => {
-            if (searchTerm.length >= 2) {
-              setIsOpen(true);
-            }
-          }}
           rows={3}
           className="flex lg:w-64 w-full min-h-[100px] p-3 rounded-md bg-neutral-700 border
           border-neutral-600 focus:outline-none focus:ring-2 focus:ring-emerald-500"
@@ -133,7 +122,7 @@ const ClientAutocomplete: React.FC<ClientAutocompleteProps> = ({
           {loading && (
             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-emerald-500"></div>
           )}
-          <Search size={16} className="text-neutral-400" />
+          <ChevronDown size={16} className="text-neutral-400" />
         </div>
       </div>
 
@@ -177,11 +166,11 @@ const ClientAutocomplete: React.FC<ClientAutocompleteProps> = ({
                 </div>
               ))}
             </div>
-          ) : searchTerm.length >= 2 ? (
+          ) : (
             <div className="px-4 py-3 text-sm text-neutral-400">
-              No clients found matching "{searchTerm}"
+              {loading ? 'Loading clients...' : 'No clients found. Create your first client to get started.'}
             </div>
-          ) : null}
+          )}
           
           {/* Client Limit Info */}
           <div className="px-4 py-2 border-t border-neutral-600 bg-neutral-750">

@@ -317,7 +317,7 @@ const [date, setDate] = React.useState<Date | undefined>(
                       value={to}
                       onChange={setTo}
                       onClientSelect={(client) => setClientId(client.id)}
-                      placeholder="Enter client name or email..."
+                      placeholder="Click to select a client..."
                       className="w-full"
                     />
                   </div>
