@@ -146,6 +146,14 @@ class Clients:
             if limit > 0:
                 clients = query.limit(limit).all()
                 total_count = query.count()
+                pagination = {
+                    'total': total_count,
+                    'pages': 1,
+                    'per_page': limit,
+                    'current_page': 1,
+                    'has_prev': False,
+                    'has_next': False
+                }
             else:
                 # Paginate
                 paginated = query.paginate(
@@ -155,6 +163,14 @@ class Clients:
                 )
                 clients = paginated.items
                 total_count = paginated.total
+                pagination = {
+                    'total': paginated.total,
+                    'pages': paginated.pages,
+                    'per_page': per_page,
+                    'current_page': page,
+                    'has_prev': paginated.has_prev,
+                    'has_next': paginated.has_next
+                }
 
             client_list = []
             for client in clients:
@@ -176,9 +192,7 @@ class Clients:
             return jsonify({
                 'success': True,
                 'clients': client_list,
-                'total_count': total_count,
-                'client_limit': 10,
-                'current_count': Client.query.filter_by(user_id=user_id).count()
+                'pagination': pagination
             }), 200
 
         except Exception as e:
