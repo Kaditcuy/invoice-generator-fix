@@ -55,6 +55,16 @@ class Clients:
             if errors:
                 return jsonify({'success': False, 'errors': errors}), 400
 
+            # Check client limit (10 clients per user)
+            client_count = Client.query.filter_by(user_id=data['user_id']).count()
+            if client_count >= 10:
+                return jsonify({
+                    'success': False,
+                    'error': 'Client limit reached',
+                    'limit_reached': True,
+                    'message': 'You have reached the maximum limit of 10 clients. Please upgrade your plan to add more clients.'
+                }), 403
+
             # Check if client with same email already exists for this user
             if data.get('email'):
                 existing_client = Client.query.filter_by(
@@ -113,6 +123,7 @@ class Clients:
             page = int(request.args.get('page', 1))
             per_page = int(request.args.get('per_page', 10))
             search = request.args.get('search', '')
+            limit = int(request.args.get('limit', 0))  # For autocomplete, limit results
 
             # Build query
             query = Client.query.filter_by(user_id=user_id)
@@ -131,19 +142,26 @@ class Clients:
             # Order by created_at descending
             query = query.order_by(Client.created_at.desc())
 
-            # Paginate
-            paginated = query.paginate(
-                page=page,
-                per_page=per_page,
-                error_out=False
-            )
+            # Apply limit for autocomplete
+            if limit > 0:
+                clients = query.limit(limit).all()
+                total_count = query.count()
+            else:
+                # Paginate
+                paginated = query.paginate(
+                    page=page,
+                    per_page=per_page,
+                    error_out=False
+                )
+                clients = paginated.items
+                total_count = paginated.total
 
-            clients = []
-            for client in paginated.items:
+            client_list = []
+            for client in clients:
                 # Count invoices for this client
                 invoice_count = len(client.invoices) if client.invoices else 0
 
-                clients.append({
+                client_list.append({
                     'id': str(client.id),
                     'user_id': str(client.user_id),
                     'name': client.name,
@@ -157,16 +175,11 @@ class Clients:
 
             return jsonify({
                 'success': True,
-                'clients': clients,
-                'pagination': {
-                    'page': page,
-                    'per_page': per_page,
-                    'total': paginated.total,
-                    'pages': paginated.pages,
-                    'has_prev': paginated.has_prev,
-                    'has_next': paginated.has_next
-                }
-            })
+                'clients': client_list,
+                'total_count': total_count,
+                'client_limit': 10,
+                'current_count': Client.query.filter_by(user_id=user_id).count()
+            }), 200
 
         except Exception as e:
             logging.error(f"Error getting clients: {str(e)}", exc_info=True)

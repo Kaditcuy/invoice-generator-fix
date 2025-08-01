@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ChevronDown, ChevronDownIcon } from 'lucide-react';
 import LogoUpload from './LogoUpload';
 import PartyField from './PartyField';
+import ClientAutocomplete from './ClientAutocomplete';
 import InvoiceLine from './InvoiceLine';
 import PaymentSection from './PaymentSection';
 import TaxDiscountSection from './TaxDiscountSection';
@@ -310,7 +311,16 @@ const [date, setDate] = React.useState<Date | undefined>(
                   <PartyField label="From" value={from} onChange={(e) => setFrom(e.target.value)} />
                 </div>
                 <div className="w-full lg:w-auto">
-                  <PartyField label="To" value={to} onChange={(e) => setTo(e.target.value)} />
+                  <div className="mb-6 w-full">
+                    <span className="block text-sm font-medium mb-2">To</span>
+                    <ClientAutocomplete
+                      value={to}
+                      onChange={setTo}
+                      onClientSelect={(client) => setClientId(client.id)}
+                      placeholder="Enter client name or email..."
+                      className="w-full"
+                    />
+                  </div>
                 </div>
               </div>
 
