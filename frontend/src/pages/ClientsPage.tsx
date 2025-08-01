@@ -61,7 +61,7 @@ const ClientsPage = () => {
         ...(searchTerm && { search: searchTerm })
       });
 
-      const response = await fetch(`${API_BASE_URL}/api/clients?${params}`);
+      const response = await fetch(`${API_BASE_URL}api/clients?${params}`);
       const data = await response.json();
 
       if (data.success) {
@@ -134,8 +134,8 @@ const ClientsPage = () => {
 
     try {
       const url = modalType === 'create'
-        ? '/api/clients'
-        : `/api/clients/${selectedClient.id}`;
+        ? `${API_BASE_URL}api/clients`
+        : `${API_BASE_URL}api/clients/${selectedClient.id}`;
 
       const method = modalType === 'create' ? 'POST' : 'PUT';
       const payload = modalType === 'create'
@@ -179,7 +179,7 @@ const ClientsPage = () => {
     try {
       if (selectedClients.length > 0) {
         // Bulk delete
-        const response = await fetch('${API_BASE_URL}/api/clients/bulk-delete', {
+        const response = await fetch(`${API_BASE_URL}api/clients/bulk-delete`, {
           method: 'DELETE',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ client_ids: selectedClients })
@@ -194,7 +194,7 @@ const ClientsPage = () => {
         }
       } else if (selectedClient) {
         // Single delete
-        const response = await fetch(`${API_BASE_URL}/api/clients/${selectedClient.id}`, {
+        const response = await fetch(`${API_BASE_URL}api/clients/${selectedClient.id}`, {
           method: 'DELETE'
         });
 

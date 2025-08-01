@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ChevronDown, Search, User, Mail, Phone } from 'lucide-react';
+import { ChevronDown, Search, User, Mail, Phone, Plus } from 'lucide-react';
 import { API_BASE_URL } from '../config/api';
 import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 interface Client {
   id: string;
@@ -29,6 +30,7 @@ const ClientAutocomplete: React.FC<ClientAutocompleteProps> = ({
 }) => {
   const { user } = useAuth();
   const userId = user?.id || user?.user_id;
+  const navigate = useNavigate();
   
   const [isOpen, setIsOpen] = useState(false);
   const [clients, setClients] = useState<Client[]>([]);
@@ -39,6 +41,12 @@ const ClientAutocomplete: React.FC<ClientAutocompleteProps> = ({
   
   const dropdownRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  // Handle create client redirect
+  const handleCreateClient = () => {
+    setIsOpen(false);
+    navigate('/clients');
+  };
 
   // Fetch all clients for the user
   const fetchClients = async () => {
@@ -174,9 +182,16 @@ const ClientAutocomplete: React.FC<ClientAutocompleteProps> = ({
           
           {/* Client Limit Info */}
           <div className="px-4 py-2 border-t border-neutral-600 bg-neutral-750">
-            <div className="text-xs text-neutral-400">
+            <div className="text-xs text-neutral-400 mb-2">
               {currentClientCount}/{clientLimit} clients used
             </div>
+            <button
+              onClick={handleCreateClient}
+              className="w-full flex items-center justify-center px-3 py-2 bg-emerald-600 text-white text-sm rounded-md hover:bg-emerald-700 transition-colors"
+            >
+              <Plus size={14} className="mr-2" />
+              Create New Client
+            </button>
           </div>
         </div>
       )}
