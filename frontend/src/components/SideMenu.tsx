@@ -30,11 +30,7 @@ const menuItems: MenuItem[] = [
   { 
     path: '/clients', 
     label: 'Clients', 
-    icon: <Users size={22} />,
-    submenu: [
-      { label: 'All Clients', path: '/clients' },
-      { label: 'Businesses', path: '/businesses' }
-    ]
+    icon: <Users size={22} />
   },
   { path: '/businesses', label: 'Businesses', icon: <Building2 size={22} /> },
   { path: '/settings', label: 'Settings', icon: <Settings size={22} /> },
