@@ -28,7 +28,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db.init_app(app)
-from models import User, Client, Invoice
+from models import User, Client, Invoice, Business
 
 # Initialize Flask-Migrate
 migrate = Migrate(app, db)
