@@ -308,7 +308,6 @@ def get_invoices():
 def save_invoice():
     data = request.get_json()
     user_id = data.get('user_id')
-    business_id = data.get('business_id')
     client_id = data.get('client_id')
     invoice_data = data.get('data')  # All invoice details as JSON
     issued_date = data.get('issued_date')
@@ -323,42 +322,19 @@ def save_invoice():
     try:
         import uuid
         uuid.UUID(user_id)
-        if business_id:
-            uuid.UUID(business_id)
         if client_id:
             uuid.UUID(client_id)
     except ValueError:
         return jsonify({'success': False, 'error': 'Invalid UUID format'}), 400
 
-    # Generate invoice number if not provided
-    invoice_number = invoice_data.get('invoice_number') if isinstance(invoice_data, dict) else None
-    if not invoice_number:
-        import time
-        invoice_number = f"INV-{int(time.time())}-{uuid.uuid4().hex[:8]}"
-    
-    try:
-        invoice = Invoice(
-            user_id=user_id,
-            business_id=business_id,
-            client_id=client_id,
-            invoice_number=invoice_number,
-            data=invoice_data,
-            issued_date=issued_date,
-            due_date=due_date,
-            status=status
-        )
-    except Exception as e:
-        # Fallback if invoice_number column doesn't exist
-        app.logger.warning(f"Failed to create invoice with invoice_number: {e}")
-        invoice = Invoice(
-            user_id=user_id,
-            business_id=business_id,
-            client_id=client_id,
-            data=invoice_data,
-            issued_date=issued_date,
-            due_date=due_date,
-            status=status
-        )
+    invoice = Invoice(
+        user_id=user_id,
+        client_id=client_id,
+        data=invoice_data,
+        issued_date=issued_date,
+        due_date=due_date,
+        status=status
+    )
     db.session.add(invoice)
     db.session.commit()
     return jsonify({'success': True, 'invoice_id': str(invoice.id)})
