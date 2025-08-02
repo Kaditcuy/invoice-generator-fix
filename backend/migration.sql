@@ -1,8 +1,5 @@
--- Migration to add business_id column to invoices table
+-- Migration to fix database schema
 -- This script should be run on the Render database
-
--- Add business_id column to invoices table
-ALTER TABLE invoices ADD COLUMN IF NOT EXISTS business_id UUID REFERENCES businesses(id);
 
 -- Add businesses table if it doesn't exist
 CREATE TABLE IF NOT EXISTS businesses (
@@ -19,23 +16,22 @@ CREATE TABLE IF NOT EXISTS businesses (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Create index on business_id for better performance
-CREATE INDEX IF NOT EXISTS idx_invoices_business_id ON invoices(business_id);
-CREATE INDEX IF NOT EXISTS idx_businesses_user_id ON businesses(user_id);
-
--- Add invoice_number column to invoices table (nullable first)
+-- Add missing columns to invoices table
+ALTER TABLE invoices ADD COLUMN IF NOT EXISTS business_id UUID REFERENCES businesses(id);
 ALTER TABLE invoices ADD COLUMN IF NOT EXISTS invoice_number VARCHAR(100);
+ALTER TABLE invoices ADD COLUMN IF NOT EXISTS currency VARCHAR(10) DEFAULT 'USD';
 
 -- Update existing invoices with a default invoice number
 UPDATE invoices 
 SET invoice_number = 'INV-' || EXTRACT(EPOCH FROM created_at)::TEXT || '-' || id::TEXT
 WHERE invoice_number IS NULL OR invoice_number = '';
 
--- Now make it NOT NULL and add UNIQUE constraint
+-- Now make invoice_number NOT NULL
 ALTER TABLE invoices ALTER COLUMN invoice_number SET NOT NULL;
 
--- Add UNIQUE constraint (will fail silently if already exists)
-ALTER TABLE invoices ADD CONSTRAINT invoices_invoice_number_unique UNIQUE (invoice_number);
+-- Add UNIQUE constraint for invoice_number
+ALTER TABLE invoices ADD CONSTRAINT IF NOT EXISTS invoices_invoice_number_unique UNIQUE (invoice_number);
 
--- Add currency column if it doesn't exist
-ALTER TABLE invoices ADD COLUMN IF NOT EXISTS currency VARCHAR(10) DEFAULT 'USD';
+-- Create indexes for better performance
+CREATE INDEX IF NOT EXISTS idx_invoices_business_id ON invoices(business_id);
+CREATE INDEX IF NOT EXISTS idx_businesses_user_id ON businesses(user_id);
