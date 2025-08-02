@@ -287,6 +287,7 @@ def get_invoices():
                     'user_id': str(inv.user_id),
                     'business_id': business_id,
                     'client_id': str(inv.client_id) if inv.client_id else None,
+                    'invoice_number': getattr(inv, 'invoice_number', None),
                     'data': inv.data,
                     'issued_date': inv.issued_date,
                     'due_date': inv.due_date,
@@ -329,10 +330,17 @@ def save_invoice():
     except ValueError:
         return jsonify({'success': False, 'error': 'Invalid UUID format'}), 400
 
+    # Generate invoice number if not provided
+    invoice_number = invoice_data.get('invoice_number') if isinstance(invoice_data, dict) else None
+    if not invoice_number:
+        import time
+        invoice_number = f"INV-{int(time.time())}-{uuid.uuid4().hex[:8]}"
+    
     invoice = Invoice(
         user_id=user_id,
         business_id=business_id,
         client_id=client_id,
+        invoice_number=invoice_number,
         data=invoice_data,
         issued_date=issued_date,
         due_date=due_date,
