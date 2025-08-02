@@ -6,6 +6,8 @@ from dotenv import load_dotenv
 import os
 import psycopg2
 import logging
+import uuid
+import time
 from datetime import datetime
 from io import BytesIO
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -320,7 +322,6 @@ def save_invoice():
 
     # Validate UUID format
     try:
-        import uuid
         uuid.UUID(user_id)
         if client_id:
             uuid.UUID(client_id)
@@ -328,7 +329,6 @@ def save_invoice():
         return jsonify({'success': False, 'error': 'Invalid UUID format'}), 400
 
     # Generate invoice number
-    import time
     invoice_number = f"INV-{int(time.time())}-{uuid.uuid4().hex[:8]}"
 
     try:
