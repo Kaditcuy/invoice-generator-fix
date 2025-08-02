@@ -58,7 +58,7 @@ class Invoice(db.Model):
     user_id = Column(UUID(as_uuid=True), ForeignKey('users.id'), nullable=False)
     business_id = Column(UUID(as_uuid=True), ForeignKey('businesses.id'))
     client_id = Column(UUID(as_uuid=True), ForeignKey('clients.id'))
-    invoice_number = Column(String(100), unique=True, nullable=True)
+    invoice_number = Column(String(100), unique=True, nullable=True, default=None)
     data = Column(JSON)
     status = Column(String(50), default='draft')
     issued_date = Column(DateTime(timezone=True))

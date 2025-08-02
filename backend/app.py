@@ -336,16 +336,29 @@ def save_invoice():
         import time
         invoice_number = f"INV-{int(time.time())}-{uuid.uuid4().hex[:8]}"
     
-    invoice = Invoice(
-        user_id=user_id,
-        business_id=business_id,
-        client_id=client_id,
-        invoice_number=invoice_number,
-        data=invoice_data,
-        issued_date=issued_date,
-        due_date=due_date,
-        status=status
-    )
+    try:
+        invoice = Invoice(
+            user_id=user_id,
+            business_id=business_id,
+            client_id=client_id,
+            invoice_number=invoice_number,
+            data=invoice_data,
+            issued_date=issued_date,
+            due_date=due_date,
+            status=status
+        )
+    except Exception as e:
+        # Fallback if invoice_number column doesn't exist
+        app.logger.warning(f"Failed to create invoice with invoice_number: {e}")
+        invoice = Invoice(
+            user_id=user_id,
+            business_id=business_id,
+            client_id=client_id,
+            data=invoice_data,
+            issued_date=issued_date,
+            due_date=due_date,
+            status=status
+        )
     db.session.add(invoice)
     db.session.commit()
     return jsonify({'success': True, 'invoice_id': str(invoice.id)})
