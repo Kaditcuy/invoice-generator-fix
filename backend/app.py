@@ -327,17 +327,26 @@ def save_invoice():
     except ValueError:
         return jsonify({'success': False, 'error': 'Invalid UUID format'}), 400
 
-    invoice = Invoice(
-        user_id=user_id,
-        client_id=client_id,
-        data=invoice_data,
-        issued_date=issued_date,
-        due_date=due_date,
-        status=status
-    )
-    db.session.add(invoice)
-    db.session.commit()
-    return jsonify({'success': True, 'invoice_id': str(invoice.id)})
+    # Generate invoice number
+    import time
+    invoice_number = f"INV-{int(time.time())}-{uuid.uuid4().hex[:8]}"
+
+    try:
+        invoice = Invoice(
+            user_id=user_id,
+            client_id=client_id,
+            invoice_number=invoice_number,
+            data=invoice_data,
+            issued_date=issued_date,
+            due_date=due_date,
+            status=status
+        )
+        db.session.add(invoice)
+        db.session.commit()
+        return jsonify({'success': True, 'invoice_id': str(invoice.id)})
+    except Exception as e:
+        app.logger.error(f"Error saving invoice: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 @app.route('/api/dashboard', methods=['GET'])
