@@ -36,3 +36,6 @@ ALTER TABLE invoices ALTER COLUMN invoice_number SET NOT NULL;
 
 -- Add UNIQUE constraint (will fail silently if already exists)
 ALTER TABLE invoices ADD CONSTRAINT invoices_invoice_number_unique UNIQUE (invoice_number);
+
+-- Add currency column if it doesn't exist
+ALTER TABLE invoices ADD COLUMN IF NOT EXISTS currency VARCHAR(10) DEFAULT 'USD';
