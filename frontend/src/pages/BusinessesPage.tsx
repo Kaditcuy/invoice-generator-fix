@@ -445,7 +445,7 @@ const BusinessesPage = () => {
                               </button>
 
                               {dropdownOpen === business.id && (
-                                <div className="fixed z-50 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5" style={{ top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }}>
+                                <div className="absolute right-0 top-full mt-1 z-50 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5">
                                   <div className="py-1">
                                     <button
                                       onClick={() => handleEditBusiness(business)}
