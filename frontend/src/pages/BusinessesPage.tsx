@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { API_BASE_URL } from '../config/api';
@@ -36,6 +36,21 @@ const BusinessesPage = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [notification, setNotification] = useState(null);
   const [dropdownOpen, setDropdownOpen] = useState(null);
+  const dropdownRef = useRef(null);
+
+  // Click outside handler
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setDropdownOpen(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -417,7 +432,7 @@ const BusinessesPage = () => {
                             {new Date(business.created_at).toLocaleDateString()}
                           </td>
                           <td className="px-6 py-4 text-right">
-                            <div className="relative inline-block text-left">
+                            <div className="relative inline-block text-left" ref={dropdownRef}>
                               <button
                                 onClick={() => setDropdownOpen(dropdownOpen === business.id ? null : business.id)}
                                 className="inline-flex items-center p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors"
@@ -426,24 +441,22 @@ const BusinessesPage = () => {
                               </button>
 
                               {dropdownOpen === business.id && (
-                                <div className="fixed inset-0 z-40" onClick={() => setDropdownOpen(null)}>
-                                  <div className="absolute right-0 top-full mt-1 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50">
-                                    <div className="py-1">
-                                      <button
-                                        onClick={() => handleEditBusiness(business)}
-                                        className="group flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
-                                      >
-                                        <Edit className="h-4 w-4 mr-3 text-gray-400 group-hover:text-gray-500" />
-                                        Edit Business
-                                      </button>
-                                      <button
-                                        onClick={() => handleDeleteBusiness(business)}
-                                        className="group flex items-center px-4 py-2 text-sm text-red-700 hover:bg-red-50 w-full text-left"
-                                      >
-                                        <Trash2 className="h-4 w-4 mr-3 text-red-400 group-hover:text-red-500" />
-                                        Delete Business
-                                      </button>
-                                    </div>
+                                <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50">
+                                  <div className="py-1">
+                                    <button
+                                      onClick={() => handleEditBusiness(business)}
+                                      className="group flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                                    >
+                                      <Edit className="h-4 w-4 mr-3 text-gray-400 group-hover:text-gray-500" />
+                                      Edit Business
+                                    </button>
+                                    <button
+                                      onClick={() => handleDeleteBusiness(business)}
+                                      className="group flex items-center px-4 py-2 text-sm text-red-700 hover:bg-red-50 w-full text-left"
+                                    >
+                                      <Trash2 className="h-4 w-4 mr-3 text-red-400 group-hover:text-red-500" />
+                                      Delete Business
+                                    </button>
                                   </div>
                                 </div>
                               )}
