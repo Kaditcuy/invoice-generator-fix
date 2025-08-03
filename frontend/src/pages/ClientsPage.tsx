@@ -421,7 +421,7 @@ const ClientsPage = () => {
 
                               {dropdownOpen === client.id && (
                                 <div className="fixed inset-0 z-40" onClick={() => setDropdownOpen(null)}>
-                                  <div className="absolute right-4 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50">
+                                  <div className="absolute right-0 top-full mt-1 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50">
                                     <div className="py-1">
                                       <button
                                         onClick={() => handleEditClient(client)}
