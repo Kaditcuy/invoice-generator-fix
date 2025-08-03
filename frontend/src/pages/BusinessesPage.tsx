@@ -50,7 +50,7 @@ const BusinessesPage = () => {
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, []);
+  }, [dropdownOpen]);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -434,7 +434,11 @@ const BusinessesPage = () => {
                           <td className="px-6 py-4 text-right">
                             <div className="relative inline-block text-left" ref={dropdownRef}>
                               <button
-                                onClick={() => setDropdownOpen(dropdownOpen === business.id ? null : business.id)}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  setDropdownOpen(dropdownOpen === business.id ? null : business.id);
+                                }}
                                 className="inline-flex items-center p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors"
                               >
                                 <MoreVertical className="h-4 w-4" />
