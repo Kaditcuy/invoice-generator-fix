@@ -451,6 +451,25 @@ const [date, setDate] = React.useState<Date | undefined>(
           previewPdfUrl={previewPdfUrl}
           setPreviewPdfUrl={setPreviewPdfUrl}
           previewInvoiceImage={previewInvoiceImage}
+          invoiceData={{
+            from,
+            to,
+            invoiceNumber,
+            issuedDate,
+            dueDate,
+            items,
+            paymentDetails,
+            terms,
+            taxPercent,
+            discountPercent,
+            shippingAmount,
+            showTax,
+            showDiscount,
+            showShipping,
+            taxType,
+            discountType,
+            logoUrl
+          }}
         />
       </div>
     </div>
