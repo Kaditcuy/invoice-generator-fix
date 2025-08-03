@@ -426,22 +426,24 @@ const BusinessesPage = () => {
                               </button>
 
                               {dropdownOpen === business.id && (
-                                <div className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10">
-                                  <div className="py-1">
-                                    <button
-                                      onClick={() => handleEditBusiness(business)}
-                                      className="group flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
-                                    >
-                                      <Edit className="h-4 w-4 mr-3 text-gray-400 group-hover:text-gray-500" />
-                                      Edit Business
-                                    </button>
-                                    <button
-                                      onClick={() => handleDeleteBusiness(business)}
-                                      className="group flex items-center px-4 py-2 text-sm text-red-700 hover:bg-red-50 w-full text-left"
-                                    >
-                                      <Trash2 className="h-4 w-4 mr-3 text-red-400 group-hover:text-red-500" />
-                                      Delete Business
-                                    </button>
+                                <div className="fixed inset-0 z-40" onClick={() => setDropdownOpen(null)}>
+                                  <div className="absolute right-4 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50">
+                                    <div className="py-1">
+                                      <button
+                                        onClick={() => handleEditBusiness(business)}
+                                        className="group flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                                      >
+                                        <Edit className="h-4 w-4 mr-3 text-gray-400 group-hover:text-gray-500" />
+                                        Edit Business
+                                      </button>
+                                      <button
+                                        onClick={() => handleDeleteBusiness(business)}
+                                        className="group flex items-center px-4 py-2 text-sm text-red-700 hover:bg-red-50 w-full text-left"
+                                      >
+                                        <Trash2 className="h-4 w-4 mr-3 text-red-400 group-hover:text-red-500" />
+                                        Delete Business
+                                      </button>
+                                    </div>
                                   </div>
                                 </div>
                               )}
@@ -679,13 +681,7 @@ const BusinessesPage = () => {
         </div>
       )}
 
-      {/* Click outside handler for dropdowns */}
-      {dropdownOpen && (
-        <div
-          className="fixed inset-0 z-0"
-          onClick={() => setDropdownOpen(null)}
-        />
-      )}
+
     </div>
   );
 };
