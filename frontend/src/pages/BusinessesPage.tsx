@@ -36,6 +36,7 @@ const BusinessesPage = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [notification, setNotification] = useState(null);
   const [dropdownOpen, setDropdownOpen] = useState(null);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
   const dropdownRef = useRef(null);
 
   // Click outside handler
@@ -432,38 +433,22 @@ const BusinessesPage = () => {
                             {new Date(business.created_at).toLocaleDateString()}
                           </td>
                           <td className="px-6 py-4 text-right">
-                            <div className="relative inline-block text-left" ref={dropdownRef}>
+                            <div className="relative inline-block text-left">
                               <button
                                 onClick={(e) => {
                                   e.preventDefault();
                                   e.stopPropagation();
+                                  const rect = e.currentTarget.getBoundingClientRect();
+                                  setDropdownPosition({
+                                    top: rect.bottom + window.scrollY,
+                                    left: rect.right - 192 // 192px is the width of the dropdown (w-48 = 12rem = 192px)
+                                  });
                                   setDropdownOpen(dropdownOpen === business.id ? null : business.id);
                                 }}
                                 className="inline-flex items-center p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors"
                               >
                                 <MoreVertical className="h-4 w-4" />
                               </button>
-
-                              {dropdownOpen === business.id && (
-                                <div className="absolute right-0 top-full mt-1 z-50 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5">
-                                  <div className="py-1">
-                                    <button
-                                      onClick={() => handleEditBusiness(business)}
-                                      className="group flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
-                                    >
-                                      <Edit className="h-4 w-4 mr-3 text-gray-400 group-hover:text-gray-500" />
-                                      Edit Business
-                                    </button>
-                                    <button
-                                      onClick={() => handleDeleteBusiness(business)}
-                                      className="group flex items-center px-4 py-2 text-sm text-red-700 hover:bg-red-50 w-full text-left"
-                                    >
-                                      <Trash2 className="h-4 w-4 mr-3 text-red-400 group-hover:text-red-500" />
-                                      Delete Business
-                                    </button>
-                                  </div>
-                                </div>
-                              )}
                             </div>
                           </td>
                         </tr>
@@ -676,6 +661,43 @@ const BusinessesPage = () => {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Floating Dropdown */}
+      {dropdownOpen && (
+        <div 
+          ref={dropdownRef}
+          className="fixed z-50 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5"
+          style={{
+            top: dropdownPosition.top,
+            left: dropdownPosition.left
+          }}
+        >
+          <div className="py-1">
+            <button
+              onClick={() => {
+                const business = businesses.find(b => b.id === dropdownOpen);
+                if (business) handleEditBusiness(business);
+                setDropdownOpen(null);
+              }}
+              className="group flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+            >
+              <Edit className="h-4 w-4 mr-3 text-gray-400 group-hover:text-gray-500" />
+              Edit Business
+            </button>
+            <button
+              onClick={() => {
+                const business = businesses.find(b => b.id === dropdownOpen);
+                if (business) handleDeleteBusiness(business);
+                setDropdownOpen(null);
+              }}
+              className="group flex items-center px-4 py-2 text-sm text-red-700 hover:bg-red-50 w-full text-left"
+            >
+              <Trash2 className="h-4 w-4 mr-3 text-red-400 group-hover:text-red-500" />
+              Delete Business
+            </button>
           </div>
         </div>
       )}
