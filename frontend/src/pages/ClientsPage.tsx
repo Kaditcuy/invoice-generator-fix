@@ -439,7 +439,7 @@ const ClientsPage = () => {
                               </button>
 
                               {dropdownOpen === client.id && (
-                                <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50">
+                                <div className="fixed z-50 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5" style={{ top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }}>
                                   <div className="py-1">
                                     <button
                                       onClick={() => handleEditClient(client)}
