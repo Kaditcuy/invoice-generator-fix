@@ -1,51 +1,113 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-
-export interface User {
-  id: string;
-  email: string;
-  first_name: string;
-  last_name: string;
-  // Add other fields as needed
-}
+// context/AuthContext.tsx
+import { createContext, useContext, useEffect, useState } from "react";
+import { supabase } from "../lib/supabase";
 
 interface AuthContextType {
-  user: User | null;
-  login: (user: User) => void;
-  logout: () => void;
+  user: any;
   loading: boolean;
+  logout: () => Promise<boolean>;
+  signinNative: (user: any) => void;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const Ctx = createContext<AuthContextType>({
+  user: null,
+  loading: true,
+  logout: async () => false,
+  signinNative: () => {},
+});
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
+export const AuthProvider = ({ children }: any) => {
+  const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Load user from localStorage on mount
-    const stored = localStorage.getItem('user');
-    if (stored) setUser(JSON.parse(stored));
-    setLoading(false);
+    const initAuth = async () => {
+      // 1. Check Supabase session
+      const { data } = await supabase.auth.getSession();
+      if (data.session?.user) {
+        setUser({
+          ...data.session.user,
+          id: data.session.user.id,
+          user_id: data.session.user.id,
+        });
+        setLoading(false);
+        return;
+      }
+
+      // 2. Check localStorage for native login
+      const storedUser = localStorage.getItem("nativeUser");
+      if (storedUser) {
+        const parsed = JSON.parse(storedUser);
+        setUser({
+          ...parsed,
+          id: parsed.id,
+          user_id: parsed.id,
+        });
+      }
+
+      setLoading(false);
+    };
+
+    initAuth();
+
+    // Supabase auth listener
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
+      if (session?.user) {
+        setUser({
+          ...session.user,
+          id: session.user.id,
+          user_id: session.user.id,
+        });
+      } else {
+        const nativeUser = localStorage.getItem("nativeUser");
+        if (nativeUser) {
+          const parsed = JSON.parse(nativeUser);
+          setUser({
+            ...parsed,
+            id: parsed.id,
+            user_id: parsed.id,
+          });
+        } else {
+          setUser(null);
+        }
+      }
+    });
+
+    return () => sub.subscription.unsubscribe();
   }, []);
 
-  const login = (user: User) => {
+  // Native login (Flask backend)
+  const signinNative = (user: any) => {
+    localStorage.setItem("nativeUser", JSON.stringify(user));
     setUser(user);
-    localStorage.setItem('user', JSON.stringify(user));
   };
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('user');
+
+  const logout = async () => {
+    try {
+      // First, clear the user state and local storage
+      setUser(null);
+      localStorage.removeItem("nativeUser");
+      
+      // Then sign out from Supabase
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      
+      // Clear any remaining session data
+      window.localStorage.removeItem('sb-auth-token');
+      window.localStorage.removeItem('sb-user-data');
+      
+      return true; // Indicate success
+    } catch (error) {
+      console.error('Logout error:', error);
+      return false;
+    }
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading }}>
-      {loading ? null : children}
-    </AuthContext.Provider>
+    <Ctx.Provider value={{ user, loading, logout, signinNative }}>
+      {children}
+    </Ctx.Provider>
   );
 };
 
-export const useAuth = () => {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
-  return ctx;
-};
+export const useAuth = () => useContext(Ctx);

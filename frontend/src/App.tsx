@@ -25,6 +25,8 @@ function Settings() {
   return <div className="p-6">Settings Page</div>;
 }
 
+
+
 import { useLocation } from 'react-router-dom';
 
 const App: React.FC = () => {

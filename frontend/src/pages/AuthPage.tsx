@@ -21,7 +21,7 @@ const AuthPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { signinNative } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,10 +42,10 @@ const AuthPage: React.FC = () => {
       if (data.success) {
         // If backend returns user object, use it. Otherwise, TODO: update backend to return user data.
         if (data.user) {
-          login(data.user);
+          signinNative(data.user);
         } else {
           // TODO: Update backend to return user object on success
-          login({ id: 'dummy', email, first_name: '', last_name: '' });
+          signinNative({ id: 'dummy', email, first_name: '', last_name: '' });
         }
         navigate('/');
       } else {
