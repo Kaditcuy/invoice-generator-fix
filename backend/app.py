@@ -1,4 +1,6 @@
 from flask import Flask, render_template, request, jsonify, make_response, send_from_directory, send_file
+import requests
+import json
 from flask_migrate import Migrate
 from flask_cors import CORS
 from weasyprint import HTML
@@ -8,7 +10,7 @@ import psycopg2
 import logging
 import uuid
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 from io import BytesIO
 from werkzeug.security import generate_password_hash, check_password_hash
 from db import db
@@ -16,6 +18,9 @@ from sqlalchemy import text
 from clients import Clients
 from invoices import InvoiceOperations
 from businesses import Businesses
+import jwt
+from functools import lru_cache
+from supabase import create_client, Client
 
 
 logging.basicConfig(level=logging.DEBUG)
@@ -24,6 +29,10 @@ app = Flask(__name__)
 load_dotenv()
 DB_PASSWORD = os.getenv('DB_PASSWORD', '')
 DATABASE_URL = os.environ.get("DATABASE_URL")
+SUPABASE_URL = os.environ.get("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
 
@@ -576,6 +585,111 @@ def signup():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+@lru_cache(maxsize=1)
+def get_supabase_jwks():
+    """Fetch and cache Supabase JWKS keys."""
+    jwks_url = f"{SUPABASE_URL}/auth/v1/keys"
+    res = requests.get(jwks_url, timeout=5)
+    res.raise_for_status()
+    return res.json()
+
+
+@app.route("/api/auth/google", methods=["POST"])
+def google_login():
+    """Handle Google OAuth login and sync with a local database"""
+    # Get token from frontend
+    auth_header = request.headers.get("Authorization", "")
+    if not auth_header.startswith("Bearer "):
+        return jsonify({"success": False, "error": "Missing or invalid Authorization header"}), 401
+
+    token = auth_header.split(" ", 1)[1]
+
+    try:
+        # Get Supabase JWKS
+        jwks = get_supabase_jwks()
+        unverified_header = jwt.get_unverified_header(token)
+        key = next((k for k in jwks["keys"] if k["kid"] == unverified_header["kid"]), None)
+        if not key:
+            return jsonify({"success": False, "error": "Invalid signing key"}), 401
+
+        # Verify token
+        public_key = jwt.algorithms.RSAAlgorithm.from_jwk(json.dumps(key))
+        payload = jwt.decode(token, public_key, algorithms=["RS256"], options={"verify_aud": False})
+
+        user_id = payload["sub"]  # Supabase user UUID
+        email = payload.get("email")
+        name = payload.get("name") or ""
+        picture = payload.get("picture")
+
+        # Extract first and last names
+        first_name, last_name = (name.split(" ", 1) + [""])[:2] if name else ("", "")
+
+    except Exception as e:
+        app.logger.error(f"Token verification failed: {str(e)}")
+        return jsonify({"success": False, "error": f"Token verification failed: {str(e)}"}), 401
+
+    try:
+        # First check if user exists by Google ID
+        existing_user = User.query.filter_by(google_id=user_id).first()
+
+        if not existing_user:
+            # Check if user exists by email (maybe they signed up with email first)
+            existing_user = User.query.filter_by(email=email).first()
+
+        if not existing_user:
+            # Create new user - let the model generate its own UUID for id
+            new_user = User(
+                email=email,
+                first_name=first_name,
+                last_name=last_name,
+                google_id=user_id,  # Store Supabase user ID in google_id field
+                password_hash=None  # No password for OAuth users
+            )
+            db.session.add(new_user)
+            db.session.commit()
+            user_obj = new_user
+            app.logger.info(f"Created new Google user: {email} with google_id: {user_id}")
+        else:
+            # Update existing user with Google ID if it's missing
+            if not existing_user.google_id:
+                existing_user.google_id = user_id
+
+            # Update name if it's missing or empty
+            if not existing_user.first_name and first_name:
+                existing_user.first_name = first_name
+            if not existing_user.last_name and last_name:
+                existing_user.last_name = last_name
+
+            # Update timestamp
+            existing_user.updated_at = datetime.utcnow()
+
+            db.session.commit()
+            user_obj = existing_user
+            app.logger.info(f"Updated existing user for Google login: {email}")
+
+        return jsonify({
+            "success": True,
+            "message": "Login successful",
+            "user": {
+                "id": str(user_obj.id),  # This will be our generated UUID
+                "first_name": user_obj.first_name,
+                "last_name": user_obj.last_name,
+                "email": user_obj.email,
+                "google_id": user_obj.google_id,  # Include google_id for reference
+                "picture": picture,
+                "auth_method": "google"
+            }
+        }), 200
+
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Database error in Google login: {str(e)}", exc_info=True)
+        return jsonify({
+            "success": False,
+            "error": "Failed to sync user with database"
+        }), 500
+
+
 @app.route('/api/auth/signin', methods=['POST'])
 def signin():
     data = request.get_json()
@@ -589,6 +703,119 @@ def signin():
         return jsonify({'success': False, 'error': 'Invalid email or password.'}), 401
     return jsonify({'success': True, 'user': {'id': str(user.id), 'email': user.email, 'first_name': user.first_name,
                                               'last_name': user.last_name}})
+
+
+@app.route('/api/auth/status', methods=['GET'])
+def check_auth_status():
+    """Check if user is authenticated and return user info"""
+    try:
+        user_id = request.args.get('user_id')
+
+        if not user_id:
+            return jsonify({
+                'success': False,
+                'error': 'user_id parameter required'
+            }), 400
+
+        # Validate UUID format
+        try:
+            uuid.UUID(user_id)
+        except ValueError:
+            return jsonify({
+                'success': False,
+                'error': 'Invalid UUID format for user_id'
+            }), 400
+
+        # Check if user exists
+        user = User.query.filter_by(id=user_id).first()
+
+        if not user:
+            return jsonify({
+                'success': False,
+                'error': 'User not found'
+            }), 404
+
+        return jsonify({
+            'success': True,
+            'user': {
+                'id': str(user.id),
+                'email': user.email,
+                'first_name': user.first_name,
+                'last_name': user.last_name,
+                'google_id': user.google_id,
+                'auth_method': 'google' if user.google_id else 'native',
+                'is_guest': user.is_guest,
+                'created_at': user.created_at.isoformat() if user.created_at else None
+            }
+        })
+
+    except Exception as e:
+        app.logger.error(f"Auth status check error: {str(e)}", exc_info=True)
+        return jsonify({
+            'success': False,
+            'error': 'Failed to check authentication status'
+        }), 500
+
+
+@app.route('/api/auth/profile', methods=['PUT'])
+def update_profile():
+    """Update user profile information"""
+    try:
+        data = request.get_json()
+        user_id = data.get('user_id')
+
+        if not user_id:
+            return jsonify({
+                'success': False,
+                'error': 'user_id required'
+            }), 400
+
+        # Validate UUID format
+        try:
+            uuid.UUID(user_id)
+        except ValueError:
+            return jsonify({
+                'success': False,
+                'error': 'Invalid UUID format for user_id'
+            }), 400
+
+        user = User.query.filter_by(id=user_id).first()
+        if not user:
+            return jsonify({
+                'success': False,
+                'error': 'User not found'
+            }), 404
+
+        # Update allowed fields
+        if 'first_name' in data:
+            user.first_name = data['first_name']
+        if 'last_name' in data:
+            user.last_name = data['last_name']
+        # Note: email updates would require additional verification
+
+        user.updated_at = datetime.utcnow()
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'user': {
+                'id': str(user.id),
+                'email': user.email,
+                'first_name': user.first_name,
+                'last_name': user.last_name,
+                'google_id': user.google_id,
+                'auth_method': 'google' if user.google_id else 'native',
+                'updated_at': user.updated_at.isoformat()
+            }
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Profile update error: {str(e)}", exc_info=True)
+        return jsonify({
+            'success': False,
+            'error': 'Failed to update profile'
+        }), 500
 
 
 # Debug route to check database connection

@@ -35,3 +35,8 @@ ALTER TABLE invoices ADD CONSTRAINT IF NOT EXISTS invoices_invoice_number_unique
 -- Create indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_invoices_business_id ON invoices(business_id);
 CREATE INDEX IF NOT EXISTS idx_businesses_user_id ON businesses(user_id);
+
+-- Add missing User model fields for OAuth
+ALTER TABLE users ADD COLUMN IF NOT EXISTS google_id VARCHAR(255) UNIQUE;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS is_guest BOOLEAN DEFAULT FALSE;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW();
