@@ -45,7 +45,7 @@ const AuthPage: React.FC = () => {
           login(data.user);
         } else {
           // TODO: Update backend to return user object on success
-          login({ id: 'dummy', email });
+          login({ id: 'dummy', email, first_name: '', last_name: '' });
         }
         navigate('/');
       } else {
