@@ -55,21 +55,28 @@ class Businesses:
             if errors:
                 return jsonify({'success': False, 'errors': errors}), 400
 
-            # Check if user exists, if not, try to sync from Supabase Auth
+            # Get user ID from request
             user_id = data['user_id']
+            
+            # Check if this is a Supabase user ID (stored in google_id field)
             from models import User
-            user = User.query.filter_by(id=user_id).first()
+            user = User.query.filter_by(google_id=user_id).first()
             
             if not user:
-                # Try to find by Supabase ID (stored in google_id field)
-                user = User.query.filter_by(google_id=user_id).first()
+                # Try to find by regular user ID
+                user = User.query.filter_by(id=user_id).first()
                 
                 if not user:
-                    # User doesn't exist, return error
-                    return jsonify({
-                        'success': False, 
-                        'error': 'User not found. Please log in again.'
-                    }), 404
+                    # Create a new user automatically for Supabase Auth users
+                    user = User(
+                        email=f"user_{user_id[:8]}@temp.com",
+                        first_name="",
+                        last_name="",
+                        google_id=user_id,
+                        password_hash=None
+                    )
+                    db.session.add(user)
+                    db.session.commit()
             
             # Use the actual user ID from the database
             actual_user_id = str(user.id)

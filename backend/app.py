@@ -757,38 +757,7 @@ def check_auth_status():
         }), 500
 
 
-@app.route('/api/auth/sync-user', methods=['POST'])
-def sync_user():
-    """Sync user from Supabase Auth to local database"""
-    try:
-        data = request.get_json()
-        supabase_user_id = data.get('user_id')
-        email = data.get('email')
-        first_name = data.get('first_name')
-        last_name = data.get('last_name')
-        
-        if not supabase_user_id:
-            return jsonify({'success': False, 'error': 'User ID is required'}), 400
-        
-        from sync_user import get_or_create_user
-        user = get_or_create_user(supabase_user_id, email, first_name, last_name)
-        
-        if user:
-            return jsonify({
-                'success': True,
-                'user': {
-                    'id': str(user.id),
-                    'email': user.email,
-                    'first_name': user.first_name,
-                    'last_name': user.last_name
-                }
-            })
-        else:
-            return jsonify({'success': False, 'error': 'Failed to sync user'}), 500
-            
-    except Exception as e:
-        app.logger.error(f"User sync failed: {str(e)}")
-        return jsonify({'success': False, 'error': str(e)}), 500
+
 
 
 @app.route('/api/auth/profile', methods=['PUT'])
