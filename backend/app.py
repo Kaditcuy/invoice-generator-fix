@@ -271,16 +271,22 @@ def get_invoices():
         if not user_id:
             return jsonify({'success': False, 'error': 'user_id required'}), 400
 
-        # Add validation for proper UUID format
-        try:
-            import uuid
-            # This will raise ValueError if not a valid UUID
-            uuid.UUID(user_id)
-        except ValueError:
-            return jsonify({'success': False, 'error': 'Invalid UUID format for user_id'}), 400
+        # Check if this is a Supabase user ID (stored in google_id field)
+        from models import User
+        user = User.query.filter_by(google_id=user_id).first()
+        
+        if not user:
+            # Try to find by regular user ID
+            user = User.query.filter_by(id=user_id).first()
+            
+            if not user:
+                return jsonify({'success': False, 'error': 'User not found'}), 404
+        
+        # Use the actual user ID from the database
+        actual_user_id = str(user.id)
 
         from models import Invoice
-        invoices = Invoice.query.filter_by(user_id=user_id).all()
+        invoices = Invoice.query.filter_by(user_id=actual_user_id).all()
         
         # You may want to serialize your invoices appropriately:
         result = []
@@ -329,20 +335,42 @@ def save_invoice():
     if not user_id or not invoice_data:
         return jsonify({'success': False, 'error': 'Missing required fields (user_id, data)'}), 400
 
-    # Validate UUID format
-    try:
-        uuid.UUID(user_id)
-        if client_id:
+    # Check if this is a Supabase user ID (stored in google_id field)
+    from models import User
+    user = User.query.filter_by(google_id=user_id).first()
+    
+    if not user:
+        # Try to find by regular user ID
+        user = User.query.filter_by(id=user_id).first()
+        
+        if not user:
+            # Create a new user automatically for Supabase Auth users
+            user = User(
+                email=f"user_{user_id[:8]}@temp.com",
+                first_name="",
+                last_name="",
+                google_id=user_id,
+                password_hash=None
+            )
+            db.session.add(user)
+            db.session.commit()
+    
+    # Use the actual user ID from the database
+    actual_user_id = str(user.id)
+
+    # Validate UUID format for client_id if provided
+    if client_id:
+        try:
             uuid.UUID(client_id)
-    except ValueError:
-        return jsonify({'success': False, 'error': 'Invalid UUID format'}), 400
+        except ValueError:
+            return jsonify({'success': False, 'error': 'Invalid client UUID format'}), 400
 
     # Generate invoice number
     invoice_number = f"INV-{int(time.time())}-{uuid.uuid4().hex[:8]}"
 
     try:
         invoice = Invoice(
-            user_id=user_id,
+            user_id=actual_user_id,
             client_id=client_id,
             invoice_number=invoice_number,
             data=invoice_data,
@@ -365,16 +393,25 @@ def get_dashboard_data():
         return jsonify({'error': 'user_id is required'}), 400
 
     try:
+        # Check if this is a Supabase user ID (stored in google_id field)
+        from models import User
+        user = User.query.filter_by(google_id=user_id).first()
+        
+        if not user:
+            # Try to find by regular user ID
+            user = User.query.filter_by(id=user_id).first()
+            
+            if not user:
+                return jsonify({'error': 'User not found'}), 404
+        
+        # Use the actual user ID from the database
+        actual_user_id = str(user.id)
+
         from sqlalchemy.orm import Session
         session = Session(bind=db.engine)
 
-        # Check if user exists
-        user = session.get(User, user_id)
-        if not user:
-            return jsonify({'error': 'User not found'}), 404
-
         # Get all invoices for the user
-        invoices = session.query(Invoice).filter_by(user_id=user_id).all()
+        invoices = session.query(Invoice).filter_by(user_id=actual_user_id).all()
 
         # Initialize stats
         stats = {

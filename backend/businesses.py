@@ -151,6 +151,20 @@ class Businesses:
             if not Businesses.validate_uuid(user_id):
                 return jsonify({'success': False, 'error': 'Invalid user_id format'}), 400
 
+            # Check if this is a Supabase user ID (stored in google_id field)
+            from models import User
+            user = User.query.filter_by(google_id=user_id).first()
+            
+            if not user:
+                # Try to find by regular user ID
+                user = User.query.filter_by(id=user_id).first()
+                
+                if not user:
+                    return jsonify({'success': False, 'error': 'User not found'}), 404
+            
+            # Use the actual user ID from the database
+            actual_user_id = str(user.id)
+
             # Pagination parameters
             page = int(request.args.get('page', 1))
             per_page = int(request.args.get('per_page', 10))
@@ -158,7 +172,7 @@ class Businesses:
             limit = int(request.args.get('limit', 0))  # For autocomplete, limit results
 
             # Build query
-            query = Business.query.filter_by(user_id=user_id)
+            query = Business.query.filter_by(user_id=actual_user_id)
 
             # Apply search filter if provided
             if search:

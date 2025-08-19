@@ -55,8 +55,34 @@ class Clients:
             if errors:
                 return jsonify({'success': False, 'errors': errors}), 400
 
+            # Get user ID from request
+            user_id = data['user_id']
+            
+            # Check if this is a Supabase user ID (stored in google_id field)
+            from models import User
+            user = User.query.filter_by(google_id=user_id).first()
+            
+            if not user:
+                # Try to find by regular user ID
+                user = User.query.filter_by(id=user_id).first()
+                
+                if not user:
+                    # Create a new user automatically for Supabase Auth users
+                    user = User(
+                        email=f"user_{user_id[:8]}@temp.com",
+                        first_name="",
+                        last_name="",
+                        google_id=user_id,
+                        password_hash=None
+                    )
+                    db.session.add(user)
+                    db.session.commit()
+            
+            # Use the actual user ID from the database
+            actual_user_id = str(user.id)
+
             # Check client limit (10 clients per user)
-            client_count = Client.query.filter_by(user_id=data['user_id']).count()
+            client_count = Client.query.filter_by(user_id=actual_user_id).count()
             if client_count >= 10:
                 return jsonify({
                     'success': False,
@@ -68,7 +94,7 @@ class Clients:
             # Check if client with same email already exists for this user
             if data.get('email'):
                 existing_client = Client.query.filter_by(
-                    user_id=data['user_id'],
+                    user_id=actual_user_id,
                     email=data['email']
                 ).first()
                 if existing_client:
@@ -79,7 +105,7 @@ class Clients:
 
             # Create new client
             client = Client(
-                user_id=data['user_id'],
+                user_id=actual_user_id,
                 name=data['name'],
                 email=data.get('email'),
                 address=data.get('address'),
@@ -119,6 +145,20 @@ class Clients:
             if not Clients.validate_uuid(user_id):
                 return jsonify({'success': False, 'error': 'Invalid user_id format'}), 400
 
+            # Check if this is a Supabase user ID (stored in google_id field)
+            from models import User
+            user = User.query.filter_by(google_id=user_id).first()
+            
+            if not user:
+                # Try to find by regular user ID
+                user = User.query.filter_by(id=user_id).first()
+                
+                if not user:
+                    return jsonify({'success': False, 'error': 'User not found'}), 404
+            
+            # Use the actual user ID from the database
+            actual_user_id = str(user.id)
+
             # Pagination parameters
             page = int(request.args.get('page', 1))
             per_page = int(request.args.get('per_page', 10))
@@ -126,7 +166,7 @@ class Clients:
             limit = int(request.args.get('limit', 0))  # For autocomplete, limit results
 
             # Build query
-            query = Client.query.filter_by(user_id=user_id)
+            query = Client.query.filter_by(user_id=actual_user_id)
 
             # Apply search filter if provided
             if search:
