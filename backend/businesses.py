@@ -55,8 +55,27 @@ class Businesses:
             if errors:
                 return jsonify({'success': False, 'errors': errors}), 400
 
+            # Check if user exists, if not, try to sync from Supabase Auth
+            user_id = data['user_id']
+            from models import User
+            user = User.query.filter_by(id=user_id).first()
+            
+            if not user:
+                # Try to find by Supabase ID (stored in google_id field)
+                user = User.query.filter_by(google_id=user_id).first()
+                
+                if not user:
+                    # User doesn't exist, return error
+                    return jsonify({
+                        'success': False, 
+                        'error': 'User not found. Please log in again.'
+                    }), 404
+            
+            # Use the actual user ID from the database
+            actual_user_id = str(user.id)
+
             # Check business limit (2 businesses per user)
-            business_count = Business.query.filter_by(user_id=data['user_id']).count()
+            business_count = Business.query.filter_by(user_id=actual_user_id).count()
             if business_count >= 2:
                 return jsonify({
                     'success': False,
@@ -68,7 +87,7 @@ class Businesses:
             # Check if business with same email already exists for this user
             if data.get('email'):
                 existing_business = Business.query.filter_by(
-                    user_id=data['user_id'],
+                    user_id=actual_user_id,
                     email=data['email']
                 ).first()
                 if existing_business:
@@ -79,7 +98,7 @@ class Businesses:
 
             # Create new business
             business = Business(
-                user_id=data['user_id'],
+                user_id=actual_user_id,
                 name=data['name'],
                 email=data.get('email'),
                 address=data.get('address'),
